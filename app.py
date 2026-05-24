@@ -24,11 +24,20 @@ try:
         df = df.merge(profiles_hfe, on="Patient_ID", how="left")
     
     patient_ids = profiles['Patient_ID'].dropna().unique().tolist()
+    lab_test_count = df["Lab_Nazov"].dropna().nunique() if "Lab_Nazov" in df.columns else 0
+    genetic_test_count = 0
+    genetic_name_cols = [c for c in profiles.columns if "genet" in c.lower() and "status" not in c.lower()]
+    if genetic_name_cols:
+        genetic_test_count = profiles[genetic_name_cols[0]].dropna().nunique()
+    elif "HFE_status" in profiles.columns:
+        genetic_test_count = 1
 except FileNotFoundError:
     print(f"CHYBA: Nenašiel sa priečinok '{OUTPUT_DIR}' alebo potrebné CSV súbory.")
     df = pd.DataFrame()
     profiles = pd.DataFrame()
     patient_ids = []
+    lab_test_count = 0
+    genetic_test_count = 0
 
 
 selected_parameters = [
@@ -45,6 +54,32 @@ heatmap_parameters = [
                 "Železo_S", "Feritin_S", "Transferín_S", "Saturácia Trf"]
     if p in df["Lab_Nazov"].unique()
 ]
+
+PARAM_UNITS = {
+    "Kreatinín_S": "µmol/l",
+    "Urea_S": "mmol/l",
+    "AST_S": "U/l",
+    "ALT_S": "U/l",
+    "CRP_S": "mg/l",
+    "GMT_S": "U/l",
+    "ALP_S": "U/l",
+    "Kálium-S": "mmol/l",
+    "Nátrium-S": "mmol/l",
+    "Chloridy-S": "mmol/l",
+    "Glukóza_ S": "mmol/l",
+    "Albumín_S": "g/l",
+    "Bielkoviny_S": "g/l",
+    "Bili-celkový_S": "µmol/l",
+    "Bili-priamy_S": "µmol/l",
+    "Železo_S": "µmol/l",
+    "Feritin_S": "µg/l",
+    "Transferín_S": "g/l",
+    "Saturácia Trf": "%",
+}
+
+def format_param_label(param):
+    unit = PARAM_UNITS.get(param)
+    return f"{param} ({unit})" if unit else param
 
 # filter data
 def filter_data(parameter, gender_filter, hfe_filter):
@@ -83,7 +118,13 @@ app_ui = ui.page_navbar(
                 ui.output_data_frame("lab_table")
             ),
             ui.card(
-                ui.card_header("Hodnoty Železa pacienta v porovnaní s populáciou"),
+                ui.card_header("Porovnanie pacienta s populáciou"),
+                ui.input_select(
+                    "patient_param",
+                    "Laboratórny parameter (porovnanie s populáciou):",
+                    choices=available_parameters,
+                    selected="Železo_S" if "Železo_S" in available_parameters else available_parameters[0]
+                ),
                 ui.output_plot("iron_plot")
             )
         )
@@ -109,6 +150,7 @@ app_ui = ui.page_navbar(
                 ui.h5("Základné informácie o datasete"),
                 ui.p(f"Celkový počet riadkov v datasete: {len(df):,}"),
                 ui.p(f"Celkový počet pacientov: {profiles['Patient_ID'].nunique():,}"),
+                ui.p(f"Počet rôznych laboratórnych vyšetrení: {lab_test_count:,}"),
                 style="background-color: #f8f9fa; border-left: 5px solid #2f80ed;"
             ),
             
@@ -214,21 +256,23 @@ def server(input, output, session):
         labs = get_patient_labs()
         pid = input.patient_id()
         if df.empty: return None
-        fe_pop = df[df['Lab_Nazov'] == 'Železo_S'].dropna(subset=['Vysl_numeric']).copy()
-        fe_pop = fe_pop[fe_pop['HFE_status_patient'].isin(['homozygote', 'heterozygote', 'positive', 'negative'])]
+        selected_param = input.patient_param()
+        pop_data = df[df['Lab_Nazov'] == selected_param].dropna(subset=['Vysl_numeric']).copy()
+        pop_data = pop_data[pop_data['HFE_status_patient'].isin(['homozygote', 'heterozygote', 'positive', 'negative'])]
         
         sns.set_theme(style="whitegrid")
         fig, ax = plt.subplots(figsize=(10, 5))
-        sns.boxplot(data=fe_pop, x='HFE_status_patient', y='Vysl_numeric', ax=ax, color='lightblue')
-        ax.set_title("Hodnoty Železa: Populácia vs. Vybraný pacient", pad=15)
-        ax.set_ylabel("Železo v sére (μmol/l)")
-        ax.axhline(27, color='#d9534f', linestyle='--', label='Kritická hranica (27)')
+        sns.boxplot(data=pop_data, x='HFE_status_patient', y='Vysl_numeric', ax=ax, color='lightblue')
+        ax.set_title(f"Hodnoty {selected_param}: Populácia vs. Vybraný pacient", pad=15)
+        ax.set_ylabel(format_param_label(selected_param))
+        if selected_param == "Železo_S":
+            ax.axhline(27, color='#d9534f', linestyle='--', label='Kritická hranica (27)')
         
-        patient_fe = labs[labs['Lab_Nazov'] == 'Železo_S']['Vysl_numeric'].dropna()
+        patient_vals = labs[labs['Lab_Nazov'] == selected_param]['Vysl_numeric'].dropna()
         prof = get_patient_profile()
         p_status = prof.get('HFE_status', 'not_tested') if prof is not None else 'not_tested'
-        if not patient_fe.empty and p_status in fe_pop['HFE_status_patient'].unique():
-            ax.scatter([p_status]*len(patient_fe), patient_fe, color='#333333', edgecolor='white', s=120, zorder=10, label=f'Pacient ({pid})')
+        if not patient_vals.empty and p_status in pop_data['HFE_status_patient'].unique():
+            ax.scatter([p_status]*len(patient_vals), patient_vals, color='#333333', edgecolor='white', s=120, zorder=10, label=f'Pacient ({pid})')
         ax.legend()
         plt.tight_layout()
         return fig
@@ -252,10 +296,13 @@ def server(input, output, session):
         if plot_type == "Histogram":
             ax.hist(data["Vysl_numeric"], bins=30, color="#2f80ed", edgecolor="white")
             ax.set_title(f"Histogram pre {input.parameter()}")
+            ax.set_xlabel(format_param_label(input.parameter()))
+            ax.set_ylabel("Počet meraní")
         elif plot_type == "Boxplot":
             # Fix pre Seaborn
             sns.boxplot(y=data["Vysl_numeric"], ax=ax, color='lightblue')
             ax.set_title(f"Boxplot pre {input.parameter()}")
+            ax.set_ylabel(format_param_label(input.parameter()))
         elif plot_type == "Boxplot podľa HFE statusu":
             hfe_data = filter_data(input.parameter(), input.gender_filter(), "Všetci")
             hfe_data = hfe_data[hfe_data["HFE_status_patient"].isin(["positive", "negative"])]
@@ -266,6 +313,7 @@ def server(input, output, session):
             # Fix pre Seaborn
             sns.boxplot(data=hfe_data, x="HFE_status_patient", y="Vysl_numeric", ax=ax, color='lightblue')
             ax.set_title(f"{input.parameter()} podľa HFE statusu")
+            ax.set_ylabel(format_param_label(input.parameter()))
         
         fig.tight_layout()
         return fig
@@ -295,8 +343,8 @@ def server(input, output, session):
 
         ax.scatter(pivot_data[x_param], pivot_data[y_param], alpha=0.6, color="#2f80ed")
         ax.set_title(f"Vzťah: {x_param} vs {y_param}")
-        ax.set_xlabel(x_param)
-        ax.set_ylabel(y_param)
+        ax.set_xlabel(format_param_label(x_param))
+        ax.set_ylabel(format_param_label(y_param))
         fig.tight_layout()
         return fig
 
