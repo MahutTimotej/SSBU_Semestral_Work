@@ -1,0 +1,9 @@
+﻿parameter,n_negative,n_positive,negative_median,positive_median,negative_q1,negative_q3,positive_q1,positive_q3,mann_whitney_u,p_value,significant,trend
+ALT_S,442,260,0.8525,0.8625,0.52,1.455,0.5487500000000001,1.455,57457.5,0.9993849772770313,False,vyššie hodnoty pri HFE positive
+AST_S,442,260,0.6924999999999999,0.6975,0.46625,1.20875,0.44875,1.22,58008.5,0.832727402120645,False,vyššie hodnoty pri HFE positive
+GMT_S,443,259,1.915,1.7000000000000002,1.0074999999999998,4.035,0.88,3.37,60851.5,0.17919371039690235,False,nižšie hodnoty pri HFE positive
+CRP_S,293,167,7.65,6.8950000000000005,2.9,22.9,2.9,23.6,23602.5,0.525778728846617,False,nižšie hodnoty pri HFE positive
+Železo_S,335,191,17.3,20.4,11.25,24.6,13.7,28.85,27642.0,0.009458601147436005,True,vyššie hodnoty pri HFE positive
+Feritin_S,337,191,228.73,265.27,85.76,488.72,79.32,656.6725,30112.0,0.218902692231151,False,vyššie hodnoty pri HFE positive
+Transferín_S,305,156,2.4,2.4,1.7,2.9,1.8,2.8,24221.5,0.7499617050541083,False,bez rozdielu v mediáne
+Saturácia Trf,260,137,33.335,32.259,20.62275,47.910000000000004,22.996,50.183,17535.0,0.8006170855631354,False,nižšie hodnoty pri HFE positive

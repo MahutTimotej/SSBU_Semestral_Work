@@ -1,0 +1,63 @@
+Analýza genetických a laboratórnych údajov
+==================================================
+
+Porovnávali sa laboratórne hodnoty medzi HFE negative a HFE positive pacientmi.
+Pre každého pacienta bol použitý medián hodnoty daného parametra.
+Keďže dáta nemali normálne rozdelenie, bol použitý Mann-Whitney U test.
+
+Parameter: ALT_S
+HFE negative medián: 0.853
+HFE positive medián: 0.863
+p-hodnota: 0.99938
+Štatisticky významné: False
+Trend: vyššie hodnoty pri HFE positive
+
+Parameter: AST_S
+HFE negative medián: 0.692
+HFE positive medián: 0.698
+p-hodnota: 0.83273
+Štatisticky významné: False
+Trend: vyššie hodnoty pri HFE positive
+
+Parameter: GMT_S
+HFE negative medián: 1.915
+HFE positive medián: 1.700
+p-hodnota: 0.17919
+Štatisticky významné: False
+Trend: nižšie hodnoty pri HFE positive
+
+Parameter: CRP_S
+HFE negative medián: 7.650
+HFE positive medián: 6.895
+p-hodnota: 0.52578
+Štatisticky významné: False
+Trend: nižšie hodnoty pri HFE positive
+
+Parameter: Železo_S
+HFE negative medián: 17.300
+HFE positive medián: 20.400
+p-hodnota: 0.00946
+Štatisticky významné: True
+Trend: vyššie hodnoty pri HFE positive
+
+Parameter: Feritin_S
+HFE negative medián: 228.730
+HFE positive medián: 265.270
+p-hodnota: 0.21890
+Štatisticky významné: False
+Trend: vyššie hodnoty pri HFE positive
+
+Parameter: Transferín_S
+HFE negative medián: 2.400
+HFE positive medián: 2.400
+p-hodnota: 0.74996
+Štatisticky významné: False
+Trend: bez rozdielu v mediáne
+
+Parameter: Saturácia Trf
+HFE negative medián: 33.335
+HFE positive medián: 32.259
+p-hodnota: 0.80062
+Štatisticky významné: False
+Trend: nižšie hodnoty pri HFE positive
+
